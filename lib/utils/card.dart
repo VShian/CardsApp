@@ -1,3 +1,6 @@
+import 'package:cards/constants.dart';
+import 'package:cards/utils/storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_credit_card/flutter_credit_card.dart';
@@ -5,30 +8,38 @@ import 'package:flutter_credit_card/credit_card_model.dart';
 import 'package:flutter_credit_card/credit_card_form.dart';
 
 class BankCard extends StatefulWidget {
-  final CreditCardModel _card;
+  final CardModel _card;
+  final bool unlocked;
 
-  BankCard(this._card, {Key key}) : super(key: key);
+  BankCard(this._card, this.unlocked, {Key key}) : super(key: key);
 
   @override
   BankCardState createState() => BankCardState();
 }
 
 class BankCardState extends State<BankCard> {
+  bool isCvvFocused = false;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
         onTap: () {
           setState(() {
-            widget._card.isCvvFocused = !widget._card.isCvvFocused;
+            isCvvFocused = !isCvvFocused;
           });
         },
         child: CreditCardWidget(
-          cardNumber: widget._card.cardNumber.toString(),
-          expiryDate: widget._card.expiryDate,
-          cardHolderName: widget._card.cardHolderName,
-          cvvCode: widget._card.cvvCode,
-          showBackView: widget._card.isCvvFocused,
-          // animationDuration: Duration(milliseconds: 1000)));
+          cardNumber: widget._card.number.toString(),
+          expiryDate: widget._card.expiration,
+          cardHolderName: widget._card.holder,
+          cvvCode: widget._card.cvv,
+          showBackView: isCvvFocused,
+          onCreditCardWidgetChange: (creditCardBrand) {},
+          cardBgColor: THEME_COLOR,
+          isHolderNameVisible: widget.unlocked,
+          obscureCardNumber: !widget.unlocked,
+          obscureCardCvv: !widget.unlocked,
+          // animationDuration: Duration(milliseconds: 1000)
         ));
   }
 }
@@ -44,12 +55,14 @@ class CreditCardFormWidget extends StatefulWidget {
 
 class CreditCardFormWidgetState extends State<CreditCardFormWidget> {
   CreditCardModel card = CreditCardModel('', '', '', '', false);
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   @override
   Widget build(context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Add New Card"),
+        backgroundColor: THEME_COLOR,
       ),
       body: Center(
         child: Column(children: <Widget>[
@@ -59,20 +72,50 @@ class CreditCardFormWidgetState extends State<CreditCardFormWidget> {
             cardHolderName: card.cardHolderName,
             cvvCode: card.cvvCode,
             showBackView: card.isCvvFocused,
+            onCreditCardWidgetChange: (creditCardBrand) {},
+            cardBgColor: THEME_COLOR,
+            isHolderNameVisible: true,
           ),
           Expanded(
             child: SingleChildScrollView(
               child: CreditCardForm(
+                formKey: formKey,
+                obscureCvv: false,
+                obscureNumber: false,
+                cardNumber: card.cardNumber,
+                cvvCode: card.cvvCode,
+                isHolderNameVisible: true,
+                isCardNumberVisible: true,
+                isExpiryDateVisible: true,
+                cardHolderName: card.cardHolderName,
+                expiryDate: card.expiryDate,
+                themeColor: THEME_COLOR,
+                textColor: Colors.black,
+                cardNumberDecoration: InputDecoration(
+                  labelText: 'Number',
+                  hintText: 'XXXX XXXX XXXX XXXX',
+                ),
+                expiryDateDecoration: InputDecoration(
+                  labelText: 'Expired Date',
+                  hintText: 'XX/XX',
+                ),
+                cvvCodeDecoration: InputDecoration(
+                  labelText: 'CVV',
+                  hintText: 'XXX',
+                ),
+                cardHolderDecoration: InputDecoration(
+                  labelText: 'Card Holder',
+                ),
                 onCreditCardModelChange: onCreditCardModelChange,
               ),
             ),
           ),
-          OutlineButton(
+          OutlinedButton(
             onPressed: () {
               widget.addCardFunction(card);
               Navigator.pop(context);
             },
-            child: Text("Add"),
+            child: Text("Add", style: TextStyle(color: THEME_COLOR)),
           )
         ]),
       ),

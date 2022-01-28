@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_credit_card/credit_card_model.dart';
 
 import 'utils/card.dart';
+import 'utils/storage.dart';
 import 'constants.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,6 +16,21 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List _cards = [];
+  bool unlocked = false;
+
+  init() async {
+    List<CardModel> cards = await DB().cards();
+    setState(() {
+      _cards = cards;
+    });
+    print(cards.length);
+  }
+
+  @override
+  void initState() {
+    init();
+    super.initState();
+  }
 
   List<Widget> _getListCards() {
     return _cards.isEmpty
@@ -25,12 +41,18 @@ class _HomePageState extends State<HomePage> {
                     subtitle: Text(
                         "Try adding one by clicking 'Add Card' button below")))
           ]
-        : _cards.map((card) => BankCard(card)).toList();
+        : _cards.map((card) => BankCard(card, unlocked)).toList();
   }
 
   void addCard(CreditCardModel card) {
-    setState(() {
-      _cards.add(card);
+    CardModel cardObject = CardModel(
+      card.cardNumber,
+      card.cardHolderName,
+      card.cvvCode,
+      card.expiryDate,
+    );
+    DB().insertCard(cardObject).then((value) {
+      init();
     });
   }
 
@@ -40,11 +62,26 @@ class _HomePageState extends State<HomePage> {
     }));
   }
 
+  void toggleLock() {
+    setState(() {
+      unlocked = !unlocked;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        backgroundColor: THEME_COLOR,
+        actions: <Widget>[
+          IconButton(
+            icon: unlocked
+                ? Icon(Icons.lock_open_outlined)
+                : Icon(Icons.lock_outlined),
+            onPressed: toggleLock,
+          )
+        ],
       ),
       body: Center(
         child: ListView(
