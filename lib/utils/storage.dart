@@ -79,7 +79,7 @@ class DB {
     );
   }
 
-  Future<void> deleteCard(int id) async {
+  Future<void> deleteCard(String id) async {
     // Get a reference to the database.
     final db = await database();
 

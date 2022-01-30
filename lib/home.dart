@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   List _cards = [];
   bool unlocked = false;
 
-  init() async {
+  refreshCards() async {
     List<CardModel> cards = await DB().cards();
     setState(() {
       _cards = cards;
@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    init();
+    refreshCards();
     super.initState();
   }
 
@@ -41,7 +41,10 @@ class _HomePageState extends State<HomePage> {
                     subtitle: Text(
                         "Try adding one by clicking 'Add Card' button below")))
           ]
-        : _cards.map((card) => BankCard(card, unlocked)).toList();
+        : _cards
+            .map((card) =>
+                BankCard(card, unlocked, refreshCards, key: Key(card.id)))
+            .toList();
   }
 
   void addCard(CreditCardModel card) {
@@ -52,7 +55,7 @@ class _HomePageState extends State<HomePage> {
       card.expiryDate,
     );
     DB().insertCard(cardObject).then((value) {
-      init();
+      refreshCards();
     });
   }
 

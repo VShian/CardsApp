@@ -1,17 +1,18 @@
 import 'package:cards/constants.dart';
 import 'package:cards/utils/storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import 'package:flutter_credit_card/flutter_credit_card.dart';
-import 'package:flutter_credit_card/credit_card_model.dart';
-import 'package:flutter_credit_card/credit_card_form.dart';
 
 class BankCard extends StatefulWidget {
   final CardModel _card;
   final bool unlocked;
+  final Function refreshCards;
 
-  BankCard(this._card, this.unlocked, {Key key}) : super(key: key);
+  BankCard(this._card, this.unlocked, this.refreshCards, {Key key})
+      : super(key: key);
 
   @override
   BankCardState createState() => BankCardState();
@@ -20,27 +21,76 @@ class BankCard extends StatefulWidget {
 class BankCardState extends State<BankCard> {
   bool isCvvFocused = false;
 
+  void onDelete() {
+    DB().deleteCard(widget._card.id).then((_) {
+      widget.refreshCards();
+      print('delete success');
+    }).catchError((error) {
+      print('delete error');
+      print(error);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: () {
-          setState(() {
-            isCvvFocused = !isCvvFocused;
-          });
-        },
-        child: CreditCardWidget(
-          cardNumber: widget._card.number.toString(),
-          expiryDate: widget._card.expiration,
-          cardHolderName: widget._card.holder,
-          cvvCode: widget._card.cvv,
-          showBackView: isCvvFocused,
-          onCreditCardWidgetChange: (creditCardBrand) {},
-          cardBgColor: THEME_COLOR,
-          isHolderNameVisible: widget.unlocked,
-          obscureCardNumber: !widget.unlocked,
-          obscureCardCvv: !widget.unlocked,
-          // animationDuration: Duration(milliseconds: 1000)
-        ));
+    return Slidable(
+        key: ValueKey(widget._card.id),
+        endActionPane: ActionPane(
+          motion: ScrollMotion(),
+          children: [
+            SlidableAction(
+              flex: 2,
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              label: 'Delete',
+              onPressed: (BuildContext context) {
+                onDelete();
+              },
+            ),
+          ],
+        ),
+
+        // The child of the Slidable is what the user sees when the
+        // component is not dragged.
+        child: GestureDetector(
+            onTap: () {
+              setState(() {
+                isCvvFocused = !isCvvFocused;
+              });
+            },
+            child: GestureDetector(
+                child: CreditCardWidget(
+                    cardNumber: widget._card.number.toString(),
+                    expiryDate: widget._card.expiration,
+                    cardHolderName: widget._card.holder,
+                    cvvCode: widget._card.cvv,
+                    showBackView: isCvvFocused,
+                    onCreditCardWidgetChange: (creditCardBrand) {},
+                    cardBgColor: THEME_COLOR,
+                    isHolderNameVisible: widget.unlocked,
+                    obscureCardNumber: !widget.unlocked,
+                    obscureCardCvv: !widget.unlocked,
+                    isSwipeGestureEnabled: false
+                    // animationDuration: Duration(milliseconds: 1000)
+                    ),
+                onLongPress: () {
+                  // copy card number
+                  if (!widget.unlocked) {
+                    return;
+                  }
+                  final clipboardText = isCvvFocused
+                      ? widget._card.cvv
+                      : widget._card.number.toString().replaceAll(' ', '');
+                  Clipboard.setData(ClipboardData(text: clipboardText))
+                      .then((_) {
+                    // toast
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Copied to clipboard'),
+                      duration: Duration(milliseconds: 1000),
+                    ));
+                  });
+                })));
   }
 }
 
