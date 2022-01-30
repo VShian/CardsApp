@@ -32,6 +32,8 @@ dependencies:
   path:
   uuid: 3.0.5
   flutter_slidable: 1.2.0
+  flutter_secure_storage: ^5.0.2
+  encrypt: ^5.0.1
 
 dev_dependencies:
   flutter_test:

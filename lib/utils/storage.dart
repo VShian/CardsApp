@@ -5,7 +5,7 @@ import 'package:uuid/uuid.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-var uuid = Uuid();
+Uuid uuid = Uuid();
 
 class DB {
   Future<Database> database() async {
